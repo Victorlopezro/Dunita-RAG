@@ -8,6 +8,7 @@ Acepta solicitudes de ingesta para tres tipos de fuente:
 """
 
 from __future__ import annotations
+import os
 
 from enum import Enum
 from typing import List, Optional
@@ -161,3 +162,54 @@ async def ingest(request: IngestRequest) -> IngestResponse:
             status_code=500,
             detail=f"Error interno durante la ingesta: {str(e)}",
         )
+
+
+# ─────────────────────────────────────────────────────────────
+# Endpoint de subida de archivos (multipart/form-data)
+# ─────────────────────────────────────────────────────────────
+from fastapi import UploadFile, File
+import tempfile
+import shutil
+
+@router.post(
+    "/ingest/upload",
+    response_model=IngestResponse,
+    summary="Subir y procesar documentos directamente",
+)
+async def ingest_upload(files: List[UploadFile] = File(...)) -> IngestResponse:
+    """
+    Sube uno o varios archivos (PDF, DOCX, PPTX, XLSX, MD, TXT)
+    y los ingesta directamente en el índice vectorial.
+    """
+    logger.info(f"Subida de {len(files)} archivo(s) para ingesta.")
+    tmp_dir = tempfile.mkdtemp(prefix="rag_upload_")
+    saved_paths = []
+    try:
+        for upload in files:
+            dest = os.path.join(tmp_dir, upload.filename)
+            with open(dest, "wb") as f:
+                shutil.copyfileobj(upload.file, f)
+            saved_paths.append(dest)
+            logger.info(f"Archivo guardado temporalmente: {dest}")
+
+        from api.services.ingest_service import ingest_documents_from_paths
+        result = ingest_documents_from_paths(saved_paths)
+
+        if "error" in result:
+            return IngestResponse(
+                status="error",
+                source_type="document",
+                detail=result["error"],
+            )
+        return IngestResponse(
+            status="success",
+            source_type="document",
+            documents_processed=result.get("documents_processed", 0),
+            chunks_indexed=result.get("chunks_indexed", 0),
+            errors=result.get("errors", []),
+        )
+    except Exception as e:
+        logger.error(f"Error en /ingest/upload: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error durante la subida: {str(e)}")
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)

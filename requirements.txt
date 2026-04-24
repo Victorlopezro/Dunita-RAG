@@ -1,5 +1,6 @@
 # ─────────────────────────────────────────────────────────────
-# rag-rack — Dependencias Python
+# rag-rack - Dependencias Python
+# Compatible con Python 3.11 y 3.12
 # ─────────────────────────────────────────────────────────────
 
 # API
@@ -20,7 +21,9 @@ qdrant-client==1.12.1
 sentence-transformers==3.3.1
 
 # LLM (Ollama)
-ollama==0.4.4
+# ollama 0.4.4 requeria httpx<0.28, lo que conflictuaba con qdrant-client
+# ollama>=0.5.0 acepta httpx>=0.27 sin restriccion superior
+ollama>=0.5.0
 
 # Ingesta web
 crawl4ai==0.4.247
@@ -28,23 +31,23 @@ crawl4ai==0.4.247
 # Ingesta documental
 docling==2.15.0
 
-# Chunking / tokenización
+# Chunking / tokenizacion
 tiktoken==0.8.0
 
 # Utilidades
 python-dotenv==1.0.1
-httpx==0.28.1
+# httpx sin pin exacto para que pip resuelva el rango compatible
+httpx>=0.27.0
 loguru==0.7.3
 gitpython==3.1.44
 
 # Frontend
 streamlit==1.41.1
 
-# Evaluación
+# Evaluacion
 ragas==0.2.10
 datasets==3.2.0
 
 # Testing
 pytest==8.3.4
 pytest-asyncio==0.24.0
-httpx==0.28.1

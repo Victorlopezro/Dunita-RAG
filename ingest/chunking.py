@@ -41,6 +41,7 @@ class Chunk:
             "file": self.file,
             "chunk_id": self.chunk_id,
             "ingested_at": self.ingested_at,
+            "section": self.section,
         }
 
 

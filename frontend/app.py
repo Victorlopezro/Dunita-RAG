@@ -125,6 +125,31 @@ def api_ingest(source_type: str, urls: list = None, file_paths: list = None) -> 
         return {"error": f"Error de conexión: {str(e)}"}
 
 
+
+def api_ingest_upload(uploaded_files) -> dict:
+    """Sube archivos al endpoint /ingest/upload de la API."""
+    import io
+    try:
+        files = [("files", (uf.name, uf.getvalue(), uf.type or "application/octet-stream"))
+                 for uf in uploaded_files]
+        resp = requests.post(
+            f"{API_URL}/ingest/upload",
+            files=files,
+            timeout=600,
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.Timeout:
+        return {"error": "Timeout: la ingesta tardó demasiado (>600s)."}
+    except requests.exceptions.HTTPError as e:
+        try:
+            detail = e.response.json().get("detail", str(e))
+        except Exception:
+            detail = str(e)
+        return {"error": f"Error HTTP {e.response.status_code}: {detail}"}
+    except Exception as e:
+        return {"error": f"Error de conexión: {str(e)}"}
+
 # ─────────────────────────────────────────────────────────────
 # Estado de sesión
 # ─────────────────────────────────────────────────────────────
@@ -237,7 +262,30 @@ with st.sidebar:
 
     st.divider()
 
-    # Limpiar historial
+    # Ingesta de documentos (subida directa)
+    st.subheader("📄 Subir documentos")
+    uploaded_files = st.file_uploader(
+        "PDF, Word, PowerPoint, Excel, Markdown, TXT",
+        type=["pdf", "docx", "pptx", "xlsx", "md", "txt"],
+        accept_multiple_files=True,
+        key="doc_upload",
+    )
+    if uploaded_files and st.button("🚀 Ingestar documentos", use_container_width=True):
+        with st.spinner(f"Procesando {len(uploaded_files)} archivo(s)..."):
+            result = api_ingest_upload(uploaded_files)
+        if "error" in result:
+            st.error(result["error"])
+        else:
+            st.success(
+                f"✅ {result.get('documents_processed', 0)} docs | "
+                f"{result.get('chunks_indexed', 0)} chunks indexados"
+            )
+            if result.get("errors"):
+                with st.expander("Ver errores"):
+                    for err in result["errors"]:
+                        st.warning(err)
+    st.divider()
+        # Limpiar historial
     if st.button("🗑️ Limpiar conversación", use_container_width=True):
         st.session_state.messages = []
         st.session_state.last_sources = []

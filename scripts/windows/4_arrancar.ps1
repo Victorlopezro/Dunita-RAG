@@ -8,7 +8,7 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\windows\4_arrancar.ps1
 # ============================================================
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $RootDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $BinDir  = Join-Path $RootDir "bin"
 $LogsDir = Join-Path $RootDir "logs"
@@ -136,14 +136,27 @@ if ($OllamaRunning) {
 # 3. Arrancar la API FastAPI en una nueva ventana
 # ----------------------------------------------------------
 Write-Host ""
-Write-Host "[...] Arrancando API FastAPI (puerto 8000)..." -ForegroundColor Yellow
+Write-Host "[...] Verificando dependencias Python..." -ForegroundColor Yellow
+
+# Actualizar pip e instalar requirements.txt si faltan modulos
+python -m pip install --upgrade pip --quiet 2>&1 | Out-Null
+Set-Location $RootDir
+python -m pip install -r requirements.txt --quiet 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[!] Algunos paquetes fallaron. Instalando esenciales..." -ForegroundColor Yellow
+    python -m pip install httpx qdrant-client loguru python-dotenv sentence-transformers uvicorn fastapi streamlit --quiet
+}
 
 # Verificar que uvicorn esta instalado
 $UvicornCheck = python -c "import uvicorn; print('ok')" 2>&1
-if ($UvicornCheck -ne "ok") {
-    Write-Host "[!] uvicorn no encontrado. Instalando..." -ForegroundColor Yellow
-    python -m pip install uvicorn fastapi --quiet
+if ($UvicornCheck -notmatch "ok") {
+    Write-Host "[!] uvicorn no disponible. Instalando..." -ForegroundColor Yellow
+    python -m pip install uvicorn[standard] fastapi --quiet
 }
+Write-Host "[OK] Dependencias listas." -ForegroundColor Green
+
+Write-Host ""
+Write-Host "[...] Arrancando API FastAPI (puerto 8000)..." -ForegroundColor Yellow
 
 $ApiCmd = "cd `"$RootDir`"; " +
           "`$env:PYTHONPATH='$RootDir'; " +

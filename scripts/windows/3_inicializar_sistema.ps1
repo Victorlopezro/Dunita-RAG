@@ -8,7 +8,7 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\windows\3_inicializar_sistema.ps1
 # ============================================================
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $RootDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $BinDir  = Join-Path $RootDir "bin"
 
@@ -44,6 +44,35 @@ Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "  rag-rack - Inicializacion del sistema" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "Modelo LLM: $OllamaModel"
+Write-Host ""
+
+# ----------------------------------------------------------
+# 0. Instalar dependencias Python (siempre, para garantizar que esten)
+# ----------------------------------------------------------
+Write-Host "[...] Verificando e instalando dependencias Python..." -ForegroundColor Yellow
+try {
+    $PythonVersion = python --version 2>&1
+    Write-Host "[OK] $PythonVersion" -ForegroundColor Green
+} catch {
+    Write-Host "[ERROR] Python no encontrado." -ForegroundColor Red
+    Write-Host "Descarga Python 3.11 desde: https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" -ForegroundColor Yellow
+    Write-Host "Durante la instalacion marca: Add Python to PATH" -ForegroundColor Yellow
+    Read-Host "Presiona Enter para salir"
+    exit 1
+}
+
+# Actualizar pip silenciosamente
+python -m pip install --upgrade pip --quiet 2>&1 | Out-Null
+
+# Instalar requirements.txt completo
+Set-Location $RootDir
+Write-Host "[...] Instalando requirements.txt (puede tardar 3-5 min la primera vez)..." -ForegroundColor Yellow
+python -m pip install -r requirements.txt --quiet
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[!] Algunos paquetes fallaron. Intentando instalar solo los esenciales..." -ForegroundColor Yellow
+    python -m pip install httpx qdrant-client loguru python-dotenv sentence-transformers uvicorn fastapi streamlit --quiet
+}
+Write-Host "[OK] Dependencias Python listas." -ForegroundColor Green
 Write-Host ""
 
 # ----------------------------------------------------------
