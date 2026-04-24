@@ -1,29 +1,43 @@
 """
-config.py — Configuración centralizada del sistema rag-rack.
-Lee variables desde .env y las expone como un objeto Settings tipado.
-"""
+config.py - Configuracion centralizada del sistema rag-rack.
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+Usa ruta absoluta para encontrar el .env independientemente
+del directorio de trabajo. Funciona en Docker y Windows sin Docker.
+"""
+import os
+from pathlib import Path
 from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Ruta absoluta al directorio raiz del proyecto
+# api/config.py -> api/ -> proyecto/
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# Buscar .env por ruta absoluta (no depende del cwd)
+_ENV_FILE = _PROJECT_ROOT / ".env"
+if not _ENV_FILE.exists():
+    _ENV_WINDOWS = _PROJECT_ROOT / "env_windows.txt"
+    if _ENV_WINDOWS.exists():
+        _ENV_FILE = _ENV_WINDOWS
 
 
 class Settings(BaseSettings):
-    """Configuración global del sistema, cargada desde .env."""
+    """Configuracion global del sistema, cargada desde .env."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
     )
 
-    # Qdrant
-    qdrant_host: str = "qdrant"
+    # Qdrant — default "localhost" para modo sin Docker
+    qdrant_host: str = "localhost"
     qdrant_port: int = 6333
     qdrant_collection: str = "rag_rack"
 
     # Ollama
-    ollama_host: str = "ollama"
+    ollama_host: str = "localhost"
     ollama_port: int = 11434
     ollama_model: str = "qwen2.5:7b"
 
@@ -43,7 +57,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     # Frontend
-    frontend_api_url: str = "http://api:8000"
+    frontend_api_url: str = "http://localhost:8000"
 
     @property
     def qdrant_url(self) -> str:
