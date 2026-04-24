@@ -1,0 +1,38 @@
+# Entorno
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Datos y volúmenes (no versionar)
+volumes/
+data/raw/
+data/parsed/
+data/chunks/
+
+# Repositorios clonados temporales
+/tmp/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# Distribución
+dist/
+build/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
