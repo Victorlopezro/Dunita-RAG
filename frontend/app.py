@@ -81,12 +81,12 @@ def api_query(query: str, filter_type: Optional[str] = None) -> dict:
         resp = requests.post(
             f"{API_URL}/query",
             json=payload,
-            timeout=120,
+            timeout=300,
         )
         resp.raise_for_status()
         return resp.json()
     except requests.exceptions.Timeout:
-        return {"error": "Timeout: el modelo tardó demasiado en responder (>120s)."}
+        return {"error": "Timeout: el modelo tardó demasiado en responder (>300s). La primera vez puede tardar más mientras se carga el modelo en RAM.."}
     except requests.exceptions.HTTPError as e:
         try:
             detail = e.response.json().get("detail", str(e))
@@ -322,6 +322,7 @@ for msg in st.session_state.messages:
                     )
 
 # Input del usuario
+    st.info("💡 Nota: La primera respuesta puede tardar 2-3 minutos mientras el modelo se carga en memoria RAM.")
 if prompt := st.chat_input("Escribe tu pregunta aquí..."):
     # Mostrar mensaje del usuario
     st.session_state.messages.append({"role": "user", "content": prompt})

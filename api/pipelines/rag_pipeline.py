@@ -146,7 +146,7 @@ def generate_with_ollama(
     model: str,
     system_prompt: str = SYSTEM_PROMPT,
     temperature: float = 0.1,
-    timeout: int = 120,
+    timeout: int = 300,
 ) -> str:
     """
     Genera una respuesta usando Ollama (API compatible con OpenAI).
@@ -173,6 +173,7 @@ def generate_with_ollama(
         "options": {
             "temperature": temperature,
             "num_predict": 1024,
+            "keep_alive": "1h",
         },
     }
 
