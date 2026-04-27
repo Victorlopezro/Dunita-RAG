@@ -30,6 +30,7 @@ class Chunk:
     file: str
     chunk_id: int
     ingested_at: str = field(default="")
+    section: str = field(default="")   # seccion o titulo del bloque (opcional)
 
     def to_payload(self) -> dict:
         """Serializa el chunk como payload para Qdrant."""
